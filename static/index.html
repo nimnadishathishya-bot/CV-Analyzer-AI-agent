@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR CV Analyzer AI | Smart Resume Screening</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="transition-colors duration-200">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
+          <i class="fa-solid fa-file-waveform text-base"></i>
+        </div>
+        <div>
+          <span class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+            CV Screener <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-200 dark:border-indigo-800/60">AI</span>
+          </span>
+        </div>
+      </div>
+      
+      <!-- Controls -->
+      <div class="flex items-center space-x-3">
+        <!-- Live API Badge -->
+        <div id="api-status-badge" class="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>Connecting...</span>
+        </div>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center justify-center">
+          <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+    <!-- Hero Header -->
+    <div class="text-center max-w-2xl mx-auto space-y-2">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        Instant Resume Screening & Fit Analysis
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">
+        Upload a candidate's CV and paste the job requirements. Our AI instantly scores match percentage, extracts skills, flags concerns, and writes interview questions.
+      </p>
+    </div>
+
+    <!-- Main Screening Form -->
+    <form id="analyzer-form" class="space-y-6" onsubmit="handleFormSubmit(event)">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- STEP 1: Job Description -->
+        <div class="clean-card p-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="job_description" class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 text-xs font-extrabold flex items-center justify-center">1</span>
+                <span>Job Description</span>
+              </label>
+              <span id="jd-char-count" class="text-xs text-slate-400 font-medium">0 characters</span>
+            </div>
+
+            <!-- Quick Template Chips -->
+            <div class="mb-3 flex items-center flex-wrap gap-1.5">
+              <span class="text-[11px] font-semibold text-slate-400 mr-1">Quick Templates:</span>
+              <button type="button" onclick="loadSampleTemplate('python')" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-medium hover:bg-indigo-100 dark:hover:bg-slate-700 transition border border-indigo-200/60 dark:border-slate-700">
+                ⚡ Python Dev
+              </button>
+              <button type="button" onclick="loadSampleTemplate('frontend')" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-medium hover:bg-indigo-100 dark:hover:bg-slate-700 transition border border-indigo-200/60 dark:border-slate-700">
+                ⚡ Frontend React
+              </button>
+              <button type="button" onclick="loadSampleTemplate('hr')" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-medium hover:bg-indigo-100 dark:hover:bg-slate-700 transition border border-indigo-200/60 dark:border-slate-700">
+                ⚡ HR Specialist
+              </button>
+            </div>
+
+            <textarea 
+              id="job_description" 
+              name="job_description" 
+              rows="9" 
+              required
+              class="w-full clean-input rounded-xl p-3.5 text-sm leading-relaxed placeholder-slate-400"
+              placeholder="Paste job title, required skills, years of experience, and key qualifications here..."></textarea>
+          </div>
+        </div>
+
+        <!-- STEP 2: Candidate CV Upload -->
+        <div class="clean-card p-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 text-xs font-extrabold flex items-center justify-center">2</span>
+                <span>Candidate Resume (PDF)</span>
+              </label>
+              <button type="button" onclick="loadDemoResume()" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                <i class="fa-regular fa-file-lines"></i>
+                <span>Use Sample CV</span>
+              </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Upload candidate resume in PDF format to parse.</p>
+
+            <!-- Dropzone Container -->
+            <div 
+              id="dropzone" 
+              class="dropzone-container rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[200px]"
+              onclick="document.getElementById('cv_file').click()"
+              ondragover="handleDragOver(event)"
+              ondragleave="handleDragLeave(event)"
+              ondrop="handleDrop(event)"
+            >
+              <input type="file" id="cv_file" name="cv_file" accept=".pdf,.txt" class="hidden" onchange="handleFileSelect(event)">
+              
+              <!-- Empty Dropzone State -->
+              <div id="dropzone-empty" class="flex flex-col items-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Drag & drop candidate CV here</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">or <span class="text-indigo-600 dark:text-indigo-400 font-semibold underline">click to browse</span></p>
+                </div>
+                <span class="text-[11px] text-slate-400 mt-2 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">PDF up to 10MB</span>
+              </div>
+
+              <!-- Selected File State -->
+              <div id="dropzone-file-info" class="hidden flex-col items-center space-y-2 w-full">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl">
+                  <i class="fa-solid fa-file-pdf"></i>
+                </div>
+                <div class="max-w-[240px]">
+                  <p id="file-name-display" class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">resume.pdf</p>
+                  <p id="file-size-display" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Ready for analysis</p>
+                </div>
+                <button type="button" onclick="clearSelectedFile(event)" class="text-xs text-rose-500 hover:text-rose-600 font-semibold mt-2 px-3 py-1 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40">
+                  <i class="fa-solid fa-trash-can mr-1"></i> Change File
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Submit CTA Button -->
+      <div class="flex justify-center pt-2">
+        <button 
+          type="submit" 
+          id="analyze-btn" 
+          class="w-full sm:w-auto min-w-[280px] py-4 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 transition duration-200 flex items-center justify-center space-x-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+          <span id="btn-text">Analyze Candidate CV</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Error Alert Box -->
+    <div id="error-banner" class="hidden rounded-xl p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200 text-sm flex items-start space-x-3">
+      <i class="fa-solid fa-circle-exclamation text-rose-500 text-base mt-0.5"></i>
+      <div class="flex-grow">
+        <h4 class="font-bold">Cannot Complete Analysis</h4>
+        <p id="error-message-text" class="text-xs mt-0.5">Error message details.</p>
+      </div>
+      <button onclick="hideError()" class="text-rose-500 hover:text-rose-700 text-sm font-bold">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Friendly Loading State -->
+    <div id="loading-state" class="hidden clean-card p-10 text-center flex-col items-center justify-center space-y-4">
+      <div class="w-14 h-14 rounded-full border-4 border-indigo-100 dark:border-indigo-900 border-t-indigo-600 animate-spin flex items-center justify-center"></div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Analyzing Candidate Profile...</h3>
+        <p id="loading-status-text" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-1">Comparing resume against requirements with AI</p>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <section id="results-section" class="hidden space-y-6">
+
+      <!-- Candidate Score Overview Card -->
+      <div class="clean-card p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-t-4 border-indigo-600">
+        
+        <!-- Candidate Info -->
+        <div class="flex items-center space-x-4 w-full md:w-auto">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 font-extrabold text-xl flex items-center justify-center">
+            <span id="res-initials">CD</span>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2.5 flex-wrap">
+              <h2 id="res-candidate-name" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Candidate Evaluation</h2>
+              <span id="res-recommendation-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                Strong Fit
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center space-x-2">
+              <span><i class="fa-regular fa-clock mr-1"></i> Screened just now</span>
+              <span>•</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-medium"><i class="fa-solid fa-microchip mr-1"></i> Llama 3.3 70B AI</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Score Gauge -->
+        <div class="flex items-center space-x-6">
+          <div class="text-center">
+            <div id="score-circle-element" class="score-gauge" style="--score-percent: 85; --score-color: #10b981;">
+              <div class="score-gauge-inner">
+                <span id="res-score-number" class="text-2xl font-black text-slate-900 dark:text-white">85%</span>
+                <span class="text-[9px] font-extrabold tracking-wider text-slate-400 uppercase">Match</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Action Toolbar -->
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center space-x-2">
+          <button onclick="switchTab('summary')" id="tab-btn-summary" class="tab-btn active">
+            <i class="fa-regular fa-file-lines mr-1.5"></i> Summary
+          </button>
+          <button onclick="switchTab('skills')" id="tab-btn-skills" class="tab-btn">
+            <i class="fa-solid fa-list-check mr-1.5"></i> Skills Gap
+          </button>
+          <button onclick="switchTab('questions')" id="tab-btn-questions" class="tab-btn">
+            <i class="fa-regular fa-circle-question mr-1.5"></i> Interview Questions
+          </button>
+          <button onclick="switchTab('redflags')" id="tab-btn-redflags" class="tab-btn">
+            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Red Flags
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="copySummaryText()" class="text-xs font-semibold px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-regular fa-copy"></i>
+            <span>Copy Summary</span>
+          </button>
+          <button onclick="resetAnalysis()" class="text-xs font-semibold px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>New Candidate</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT PANELS -->
+
+      <!-- Panel 1: Executive Summary -->
+      <div id="tab-panel-summary" class="clean-card p-6 sm:p-8 space-y-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+          <i class="fa-solid fa-user-check text-indigo-600"></i>
+          <span>Executive Candidate Evaluation</span>
+        </h3>
+        <p id="res-summary-text" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+          Evaluation text...
+        </p>
+      </div>
+
+      <!-- Panel 2: Skills Comparison -->
+      <div id="tab-panel-skills" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Matched Skills -->
+        <div class="clean-card p-6 border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/10">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-bold text-emerald-800 dark:text-emerald-400 flex items-center space-x-2">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Matched Strengths & Skills</span>
+            </h4>
+            <span id="matched-count-badge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+          </div>
+          <div id="res-matched-skills" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Missing Skills -->
+        <div class="clean-card p-6 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/10">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-bold text-rose-800 dark:text-rose-400 flex items-center space-x-2">
+              <i class="fa-solid fa-circle-xmark"></i>
+              <span>Missing or Missing Skills</span>
+            </h4>
+            <span id="missing-count-badge" class="text-xs px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold">0</span>
+          </div>
+          <div id="res-missing-skills" class="flex flex-wrap gap-2"></div>
+        </div>
+
+      </div>
+
+      <!-- Panel 3: Custom Interview Questions -->
+      <div id="tab-panel-questions" class="hidden space-y-4">
+        <div id="res-questions-container" class="space-y-3"></div>
+      </div>
+
+      <!-- Panel 4: Red Flags -->
+      <div id="tab-panel-redflags" class="hidden clean-card p-6 border-amber-200 dark:border-amber-900/60 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
+        <h4 class="text-sm font-bold text-amber-800 dark:text-amber-400 flex items-center space-x-2">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Red Flags & Risk Assessment</span>
+        </h4>
+        <div id="res-red-flags" class="space-y-2"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Popover -->
+  <div id="toast" class="px-4 py-3 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-xl border border-slate-700 flex items-center space-x-2">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toast-message">Action successful!</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
