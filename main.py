@@ -160,7 +160,7 @@ Return strictly a valid raw JSON object matching the requested schema.
         client = genai.Client(api_key=api_key)
 
         # Gemini active flash models for API v1beta
-        models_to_try = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']
+        models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3-flash-preview']
         response = None
         last_err = None
 
