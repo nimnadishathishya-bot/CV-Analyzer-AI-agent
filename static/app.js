@@ -30,9 +30,20 @@ Key Requirements:
 - Excellent verbal and written communication skills.`
 };
 
+let currentApiInfo = null;
+
 // Initialize app when DOM loads
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  if (window.location.protocol === 'file:') {
+    showError("⚠️ You opened this page directly as a local file (file:///). Please run run_app.bat and visit http://localhost:8000 in your browser!");
+    const badge = document.getElementById('api-status-badge');
+    if (badge) {
+      badge.className = "flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800";
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Open via http://localhost:8000</span>`;
+    }
+    return;
+  }
   checkBackendHealth();
   setupCharCounter();
 });
@@ -69,14 +80,20 @@ async function checkBackendHealth() {
     const res = await fetch('/api/health');
     if (res.ok) {
       const data = await res.json();
-      badge.className = "flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800";
-      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>AI Ready (Groq)</span>`;
+      currentApiInfo = data;
+      if (data.api_configured || data.gemini_configured) {
+        badge.className = "flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition cursor-pointer";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>AI Ready (${data.provider || 'Connected'})</span>`;
+      } else {
+        badge.className = "flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:border-amber-400 transition cursor-pointer";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Set API Key</span>`;
+      }
     } else {
       throw new Error();
     }
   } catch (err) {
-    badge.className = "flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800";
-    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>API Offline</span>`;
+    badge.className = "flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:border-rose-400 transition cursor-pointer";
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Server Offline</span>`;
   }
 }
 
@@ -453,4 +470,67 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('show');
   }, 2500);
+}
+
+// API Key Modal Handlers
+function openApiKeyModal() {
+  const modal = document.getElementById('api-key-modal');
+  const hint = document.getElementById('current-key-hint');
+  if (currentApiInfo && currentApiInfo.api_configured) {
+    hint.textContent = `Connected: ${currentApiInfo.provider} (${currentApiInfo.masked_key || 'configured'})`;
+  } else {
+    hint.textContent = `No API key currently saved.`;
+  }
+  modal.classList.remove('hidden');
+  const input = document.getElementById('input-api-key');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 100);
+  }
+}
+
+function closeApiKeyModal() {
+  document.getElementById('api-key-modal').classList.add('hidden');
+}
+
+function toggleKeyVisibility() {
+  const input = document.getElementById('input-api-key');
+  const icon = document.getElementById('eye-icon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fa-solid fa-eye';
+  }
+}
+
+async function saveApiKey() {
+  const input = document.getElementById('input-api-key');
+  const key = input.value.trim();
+  if (!key) {
+    alert("Please enter a valid API key.");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/set-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: key })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to save key' }));
+      throw new Error(err.detail);
+    }
+
+    const data = await res.json();
+    input.value = '';
+    closeApiKeyModal();
+    showToast(data.message || "API Key saved successfully!");
+    checkBackendHealth();
+  } catch (e) {
+    alert("Error: " + (e.message || "Could not save API key. Make sure the server is running."));
+  }
 }

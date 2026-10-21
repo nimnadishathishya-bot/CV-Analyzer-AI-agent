@@ -205,6 +205,10 @@ Return strictly a valid raw JSON object matching the requested schema.
         )
 
 
+class KeyConfigRequest(BaseModel):
+    api_key: str
+
+
 # --- Endpoints ---
 @app.get("/api/health")
 def health_check():
@@ -213,7 +217,34 @@ def health_check():
     key = (os.getenv("GEMINI_API_KEY") or os.getenv("GROQ_API_KEY") or "").strip().strip("'").strip('"')
     is_valid = bool(key and key != "your_gemini_api_key_here")
     provider = "Groq (Llama 3.3)" if key.startswith("gsk_") else "Google Gemini"
-    return {"status": "ok", "app": "HR CV Analyzer AI", "gemini_configured": is_valid, "groq_configured": is_valid, "provider": provider}
+    masked_key = f"{key[:6]}...{key[-4:]}" if is_valid and len(key) > 10 else ("***" if is_valid else "")
+    return {
+        "status": "ok",
+        "app": "HR CV Analyzer AI",
+        "api_configured": is_valid,
+        "gemini_configured": is_valid,
+        "groq_configured": is_valid,
+        "provider": provider if is_valid else "None",
+        "masked_key": masked_key
+    }
+
+
+@app.post("/api/set-key")
+def set_api_key(config: KeyConfigRequest):
+    """Save user API key to .env file directly from the UI."""
+    new_key = config.api_key.strip().strip("'").strip('"')
+    if not new_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="API Key cannot be empty.")
+
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    provider = "Groq" if new_key.startswith("gsk_") else "Google Gemini"
+    env_content = f"# API Key Configuration for HR CV Analyzer AI\nGEMINI_API_KEY={new_key}\nGROQ_API_KEY={new_key}\n"
+    
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.write(env_content)
+
+    load_dotenv(override=True)
+    return {"status": "ok", "message": f"Connected to {provider} successfully!", "provider": provider}
 
 
 @app.post("/api/analyze", response_model=CVEvaluationReport)
